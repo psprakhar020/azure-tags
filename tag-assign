@@ -1,0 +1,34 @@
+######################################################################
+#Input variables:
+#sub: For subscription name
+#RG: For resource group name
+#tag_name: 
+#tag_value:
+#tag: hash format of tag_name and tag_value
+######################################################################
+
+Login-AzAccount
+
+$sub= Read-Host  "Please provide the subscription name"
+$RG= Read-Host "Please provide the resource group name to check for tags"
+$resources= Get-AzResource -ResourceGroupName $RG
+
+foreach($resource in $resources)
+{
+
+if ($resource.Tags.count -eq 0)
+    {
+        Write-Host "Please let us know the tag details to update"
+        $tag_name= Read-Host "Tag Name"
+        $tag_value= Read-Host "Tag Value"
+
+        #converting tag input into a hash table
+        $tag =@{$tag_name= $tag_value}
+
+        #assigning tag to the resource
+        Set-AzResource -ResourceId $resource.resourceId `
+                -Tag $tag `
+                -Force
+
+    }     
+}
