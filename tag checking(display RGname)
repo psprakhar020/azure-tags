@@ -1,0 +1,8 @@
+$subs= (Get-AzSubscription).Name
+
+foreach($subs_i in $subs)
+{
+Set-AzContext $subs_i | Out-Null
+
+(Get-AzResourceGroup | ?{$_.tags.DevOwnerEmail -match "name_here*" -or $_.tags.DevOwnerEmail -match "name_here_1"}).ResourceGroupName
+}
