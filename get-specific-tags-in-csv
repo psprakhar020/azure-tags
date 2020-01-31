@@ -1,0 +1,20 @@
+$outputfile = "C:\Desktop\tags.csv"
+$arr =@() //creating a empty hashtable for storing csv output data
+$allvm = get-azurermvm
+foreach( $vm in $allvm )
+{
+
+  $tags= (get-azurermvm -name $vm.Name -ResourceGroupName $vm.resourcegroupname).tags
+
+  $vm.Name
+  $object =[pscustomobject]@{ 
+  Name = $vm.Name
+  tagname1= $tags['tagname1']
+  tagname2= $tags['tagname2'] 
+  }
+
+  $arr = $arr + $object 
+}
+
+
+$arr | Export-Csv -Path $outputfile -NoTypeInformation 
