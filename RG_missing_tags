@@ -1,0 +1,22 @@
+$arr = @()
+$date= Get-date -UFormat "%d%m%Y"
+$outputfile = "RGLackingTags_"+$date+".csv"
+Get-AzSubscription |Select-Object -Unique | ForEach-Object {
+    $subscription= $_
+	#optional - To filter specific subscription
+	if($subscription.name -ne "ABI AFRICA PROD" -and $subscription.name -ne "ABI AFRICA NON-PROD")
+	{
+        Set-AzContext -SubscriptionName $subscription.name | out-null
+		Write-Verbose "---- Processing subscription $($subscription.name)-------" -Verbose
+        $rgs=Get-azresourcegroup | Where-object{$_.Tags -eq $null}
+        foreach($rg in $rgs)
+	    {
+		        $object = [PSCustomobject]@{
+		        RgName                =$rg.resourcegroupname
+		        Location              =$rg.location
+		        Subscription          =$subscription.name}
+		        $arr += $object    
+		}
+    }
+}
+$arr | export-csv -path $outputfile -notype
