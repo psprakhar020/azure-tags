@@ -1,0 +1,89 @@
+# Copy RG tags to Resources, keep existing tags, overwrite if same Tag.
+
+function Add-ResourceGroupTagsToResources() 
+{
+    param (
+        [Parameter(Mandatory = $true)]
+        [string] $resourceGroupName
+    )
+    
+    $group = Get-AzResourceGroup $resourceGroupName -Verbose
+    if ($group.Tags.Count -ne 0) 
+    {
+        $resources = Get-AzResource -ResourceGroupName $group.ResourceGroupName
+        foreach ($r in $resources)
+        {
+            $tagChanges = $false
+            $resourcetags = (Get-AzResource -ResourceId $r.ResourceId).Tags
+            
+            if ($resourcetags)
+            {
+                foreach ($key in $group.Tags.Keys)
+                {
+                    if (-not($resourcetags.ContainsKey($key)))
+                    {
+                        Write-Output "ADD: $($r.Name) - $key"
+                        $resourcetags.Add($key, $group.Tags[$key])
+                        $tagChanges = $True
+                    }
+                    else
+                    {
+                        if ($resourcetags[$key] -eq $group.Tags[$key])
+                        {
+                            # Key is up-to-date
+                        }
+                        else
+                        {
+                            Write-Output "UPD: $($r.Name) - $key"
+                            $null = $resourcetags.Remove($key)
+                            $resourcetags.Add($key, $group.Tags[$key])
+                            $tagChanges = $True
+                        }
+                    }
+                }
+                $tagsToWrite = $resourcetags 
+            }
+            else
+            {
+                # All tags missing
+                Write-Output "ADD: $($r.Name) - All tags from RG"
+                $tagsToWrite = $group.Tags
+                $tagChanges = $True
+            }
+
+            if ($tagChanges)
+            {
+                try
+                {
+                    $rUPD = Set-AzResource -Tag $tagsToWrite -ResourceId $r.ResourceId -Force -ErrorAction Stop
+                }
+                catch
+                {
+                    # Write-Error "$($r.Name) - $($group.ResourceID) : $_.Exception"
+                }
+            }
+        }
+    }
+    else
+    {
+        Write-Warning "$resourceGroupName has no tags set."
+    }
+}
+
+Connect-AzAccount
+
+# Checking for tags in all subscriptions
+$subscriptions = Get-AzSubscription
+
+ForEach ($sub in $subscriptions)
+{
+    $subscription = Select-AzSubscription -SubscriptionId $sub.SubscriptionId
+    Write-Output "Processing $($sub.Name) ($($sub.SubscriptionId))"
+
+    $allResourceGroups = Get-AzResourceGroup
+    ForEach ($resourceGroup in $allResourceGroups) 
+    {
+        Write-Output "Processing $($resourceGroup.ResourceGroupName) ($($sub.Name))"
+        Add-ResourceGroupTagsToResources -resourceGroupName $resourceGroup.ResourceGroupName
+    }
+}
