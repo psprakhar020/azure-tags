@@ -1,0 +1,33 @@
+{
+  "mode": "All",
+  "policyRule": {
+    "if": {
+      "anyOf": [
+        {
+          "field": "tags.SystemName",
+          "exists": "false"
+        },
+        {
+          "field": "tags.BusinessOwner",
+          "exists": "false"
+        },
+        {
+          "field": "tags.TechnicalOwner",
+          "exists": "false"
+        },
+        {
+          "field": "tags.VELUXWBS",
+          "exists": "false"
+        },
+        {
+          "field": "tags.SystemTier",
+          "exists": "false"
+        }
+      ]
+    },
+    "then": {
+      "effect": "deny"
+    }
+  },
+  "parameters": {}
+}	
